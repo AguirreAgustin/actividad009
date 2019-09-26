@@ -1,8 +1,26 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const mustacheExpress = require('mustache-express')
-const mysql = require('mysql');
 const app = express()
+const mysql = require('mysql');
+const dotenv = require('dotenv');
+
+dotenv.config();
+var msj = process.env.MENSAJE;
+var db = mysql.createConnection({
+    host     : process.env.DBSERVER,
+    user     : process.env.DBUSER,
+    password : process.env.DBPASSWORD,
+    database : process.env.DBNAME,
+    ssl:true
+  });
+   
+db.connect((err) => {
+    if (err) {
+        throw err;
+    }
+    console.log('Conectada a la base de datos!');
+});
 
 var list = {
     elementos: []
@@ -36,10 +54,41 @@ app.get('/', function (req, res) {
     res.render("agus2.html", list)
 })
 
+app.delete('/api/tareas/:tareaId', function (req,res) {
+
+    if (typeof req.params.tareaId == 'undefined'){
+        res.send({error: true});
+    }
+
+    let query = "DELETE FROM tareasdb.tareas WHERE tareaId = " + req.params.tareaId;
+
+    db.query(query, (err,result) =>{
+
+        if(err){
+            res.redirect('/error');
+        }
+
+        res.send(result);
+    })
+
+    //res.send(list.elementos);
+
+})
 
 app.get('/api/tareas', function (req, res) {
     //res.render("agus2.html", list)
-    res.send(list.elementos)
+    let query = "SELECT tareaId, descripcion, orden FROM tareasdb.tareas ORDER BY orden ASC"
+
+    db.query(query, (err,result) =>{
+
+        if(err){
+            res.redirect('/error');
+        }
+
+        res.send(result);
+    })
+
+    //res.send(list.elementos);
 
 })
 
